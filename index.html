@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Vehicle Monitoring System</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+*{box-sizing:border-box;font-family:Segoe UI,Arial;}
+
+body{
+  margin:0;
+  color:#e6eef2;
+  height:100vh;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255,255,255,0.03) 0 2px, transparent 3px),
+    radial-gradient(circle at 80% 40%, rgba(255,255,255,0.03) 0 2px, transparent 3px),
+    radial-gradient(circle at 50% 70%, rgba(255,255,255,0.03) 0 2px, transparent 3px),
+    linear-gradient(180deg,#1f2a30,#0f1418);
+  background-size:120px 120px;
+}
+
+.app{display:flex;justify-content:center;align-items:center;height:100vh;}
+
+.login{
+  width:380px;
+  background:#2b3137;
+  padding:30px;
+  border-radius:14px;
+  text-align:center;
+  box-shadow:0 10px 30px rgba(0,0,0,.4);
+}
+
+.login input{
+  width:100%;
+  padding:12px;
+  margin:10px 0;
+  border:none;
+  border-radius:6px;
+}
+
+.btn{
+  padding:10px 16px;
+  border:none;
+  border-radius:7px;
+  background:#26a69a;
+  color:white;
+  cursor:pointer;
+  font-size:14px;
+}
+
+.dashboard{
+  display:none;
+  width:100%;
+  height:100vh;
+  padding:12px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns: 1.2fr 1.4fr 1fr;
+  grid-template-rows: auto 1fr;
+  gap:12px;
+  height:100%;
+}
+
+.header{
+  grid-column:1/4;
+  background:#2f3640;
+  padding:12px 16px;
+  border-radius:10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.alert{
+  background:#e65a5a;
+  padding:6px 12px;
+  border-radius:6px;
+  font-weight:bold;
+  font-size:14px;
+}
+
+.card{
+  background:rgba(49,56,66,.92);
+  border-radius:10px;
+  padding:14px;
+  box-shadow:0 6px 18px rgba(0,0,0,.4);
+}
+
+.left,.center,.right{display:flex;flex-direction:column;gap:12px;}
+
+.status-row{
+  display:flex;
+  justify-content:space-between;
+  margin:7px 0;
+  font-size:14px;
+}
+
+.mini-map{
+  height:160px;
+  background:#263238;
+  border-radius:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+}
+
+.modal-bg{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.65);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  z-index:99;
+}
+
+.modal{
+  background:#1f262a;
+  padding:20px;
+  border-radius:10px;
+  width:90%;
+  max-width:900px;
+}
+
+#map{height:400px;}
+
+input{
+  padding:8px;width:100%;
+  margin:6px 0;
+  border-radius:5px;
+  border:none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<!-- LOGIN -->
+<div class="login" id="loginBox">
+  <h2>AI Vehicle Monitoring</h2>
+  <input id="username" placeholder="Username">
+  <input id="password" placeholder="Password" type="password">
+  <button class="btn" id="loginBtn">Sign In</button>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dashboard" id="dashboard">
+
+<div class="grid">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="alert" id="topAlert">URGENT: Front Brake Pad Critical</div>
+    <div>
+      <b>Welcome Dharani</b><br>
+      <small>Vehicle: Splendor iSmart | Reg No: KA01AB1234</small>
+    </div>
+  </div>
+
+  <!-- LEFT PANEL : VEHICLE DETAILS (FORMER BIKE SPACE) -->
+  <div class="left">
+
+    <div class="card">
+      <h3>Vehicle Information</h3>
+      <div class="status-row"><span>Owner</span><b>Dharani</b></div>
+      <div class="status-row"><span>Model</span><b>Splendor iSmart</b></div>
+      <div class="status-row"><span>Odometer</span><b>24,560 km</b></div>
+      <div class="status-row"><span>Insurance Valid</span><b>Till 18-Aug-2026</b></div>
+      <div class="status-row"><span>System Status</span><b style="color:#26a69a">Online</b></div>
+    </div>
+
+    <div class="card">
+      <h3>Service History</h3>
+      <div class="status-row"><span>Last Service</span><b>05-Jan-2025</b></div>
+      <div class="status-row"><span>Next Service</span><b>05-Jul-2025</b></div>
+      <div class="status-row"><span>Service Type</span><b>Full Service</b></div>
+      <div class="status-row"><span>Last Cost</span><b>₹2,450</b></div>
+    </div>
+
+    <div class="card">
+      <h3>Sensor Health</h3>
+      <div class="status-row"><span>Engine Oil</span><b>88%</b></div>
+      <div class="status-row"><span>Tire Pressure</span><b>33 / 35 PSI</b></div>
+      <div class="status-row"><span>Brake Pad</span><b style="color:#e65a5a">12% (Critical)</b></div>
+    </div>
+
+  </div>
+
+  <!-- CENTER -->
+  <div class="center">
+
+    <div class="card">
+      <h3>Live Vehicle Status</h3>
+      <p>Speed: 43 km/h</p>
+      <p>Fuel Level: 30%</p>
+      <p>RPM: 3000</p>
+      <p>Coolant Temp: Optimal</p>
+      <button class="btn" id="viewHealthBtn">View Full Health</button>
+    </div>
+
+    <div class="card">
+      <h3>Live Location</h3>
+      <div class="mini-map" id="miniMap">Click to View Map</div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right">
+
+    <div class="card">
+      <h3>Book a Service</h3>
+      <input type="date" id="prefDate">
+      <input type="time" id="prefTime">
+      <input id="dealLoc" placeholder="Dealership Location">
+      <button class="btn" id="scheduleBtn">Schedule</button>
+      <button class="btn" id="demoFill">Auto Fill</button>
+    </div>
+
+    <div class="card">
+      <h3>Reports</h3>
+      <button class="btn" id="downloadPdf">Download Vehicle Report</button>
+    </div>
+
+    <div class="card">
+      <button class="btn" id="toggleAlert">Toggle Alert</button>
+    </div>
+
+  </div>
+
+</div>
+</div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <button class="btn" id="closeModal">Close</button>
+    <h3 id="modalTitle"></h3>
+
+    <div id="mapContainer">
+      <div id="map"></div>
+    </div>
+
+    <div id="healthContent" style="display:none;">
+      <p>Engine Oil: 88%</p>
+      <p>Brake Pad: 12% (CRITICAL)</p>
+      <p>Battery Health: 25%</p>
+      <p>Chain Lubrication: Needs Lube</p>
+      <p>Coolant Temp: Optimal</p>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+loginBtn.onclick=function(){
+  if(!username.value || !password.value){
+    alert("Enter login");
+    return;
+  }
+  loginBox.style.display="none";
+  dashboard.style.display="block";
+};
+
+viewHealthBtn.onclick=function(){
+  modalBg.style.display="flex";
+  mapContainer.style.display="none";
+  healthContent.style.display="block";
+  modalTitle.innerText="Vehicle Health Status";
+};
+
+let map;
+miniMap.onclick=function(){
+  modalBg.style.display="flex";
+  mapContainer.style.display="block";
+  healthContent.style.display="none";
+  modalTitle.innerText="Live Location";
+
+  setTimeout(()=>{
+    if(!map){
+      map=L.map("map").setView([12.9716,77.5946],13);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+      L.marker([12.9716,77.5946]).addTo(map);
+    } else map.invalidateSize();
+  },200);
+};
+
+closeModal.onclick=()=>modalBg.style.display="none";
+
+scheduleBtn.onclick=()=>alert("Service Scheduled Successfully");
+
+demoFill.onclick=()=>{
+  prefDate.value="2025-07-05";
+  prefTime.value="10:30";
+  dealLoc.value="Hero Service Center - Sector 1A";
+};
+
+toggleAlert.onclick=()=>{
+  topAlert.style.display =
+    topAlert.style.display==="none"?"block":"none";
+};
+
+downloadPdf.onclick=function(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.text("AI Vehicle Monitoring Report",20,20);
+  doc.text("Owner: Dharani",20,35);
+  doc.text("Vehicle: Splendor iSmart",20,45);
+  doc.text("Reg No: KA01AB1234",20,55);
+  doc.text("Odometer: 24,560 km",20,65);
+  doc.text("Last Service: 05-Jan-2025",20,75);
+  doc.text("Next Service: 05-Jul-2025",20,85);
+  doc.text("Speed: 43 km/h",20,95);
+  doc.text("Fuel: 30%",20,105);
+  doc.text("Brake Pad: 12% (CRITICAL)",20,115);
+  doc.text("Battery Health: 25%",20,125);
+  doc.save("vehicle-report.pdf");
+};
+</script>
+
+</body>
+</html>
